@@ -1,6 +1,4 @@
 # Module 1 - Create a Blockchain
-
-
 # Importing the libraries
 import datetime
 import hashlib
@@ -19,12 +17,10 @@ class Blockchain:
     def createBlock(self, proof, prevHash):
         # Define each block in the Blockchain with the 4 essential keys: idx of
         # the block, timestamp when it was mined, proof of work, previous hash
-        block = {
-                    'index' : len(self.chain)+1,
-                    'timestamp' : str(datetime.datetime.now()),
-                    'proof' : proof,
-                    'prevHash' : prevHash
-                }
+        block = {'index' : len(self.chain)+1,
+                'timestamp' : str(datetime.datetime.now()),
+                'proof' : proof,
+                'prevHash' : prevHash}
         # Append the block we just created
         self.chain.append(block)
         return block
@@ -70,14 +66,14 @@ class Blockchain:
             # Get the current block
             currBlock = chain[blockIndex]
             # Check the prevHash of currBlock is the hash of the prevBlock
-            if block['prevHash'] != self.hash(prevBlock) : return False
+            if currBlock['prevHash'] != self.hash(prevBlock) : return False
 
             # Check that the proof of each block is valid
             prevProof = prevBlock['proof']
             currProof = currBlock['proof']
             hashOperation = hashlib.sha256(str(currProof**2 - prevProof**2).encode()).hexdigest()
             # Ensure the hashOperation starts with 4 leading zeroes
-            if hashOperation[:4] != '0000' : return = False
+            if hashOperation[:4] != '0000' : return False
 
             prevBlock = currBlock
             blockIndex += 1
@@ -85,3 +81,49 @@ class Blockchain:
         return True
 
 # Part 2 - Mining our Blockchain
+# Creating a web app with Flask
+app = Flask(__name__)
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = False
+
+# Creating a blockchain
+blockchain = Blockchain()
+
+# Mining a new block
+@app.route('/mineBlock', methods=['GET'])
+
+def mineBlock():
+    prevBlock = blockchain.getPrevBlock()
+    prevProof = prevBlock['proof']
+    prevHash = blockchain.hash(prevBlock)
+
+    proof = blockchain.proofOfWork(prevProof)
+    block = blockchain.createBlock(proof, prevHash)
+
+    response = {'message' : 'Congratulations, you have successfully mined a block!',
+                'index' : block['index'],
+                'timestamp' : block['timestamp'],
+                'proof' : block['proof'],
+                'prevHash' : block['prevHash']}
+    return jsonify(response), 200
+
+# Getting the full blockchain
+@app.route('/getChain', methods=['GET'])
+
+def getChain():
+    response = {'chain' : blockchain.chain,
+                'length' : len(blockchain.chain)}
+    return jsonify(response), 200
+
+# Check if the blockchain is valid
+@app.route('/isChainValid', methods=['GET'])
+
+def isChainValid():
+    isChainValid = blockchain.isChainValid(blockchain.chain)
+    if isChainValid : 
+        return jsonify('The blockchain is valid.'), 200
+    else :
+        return jsonify('The blockchain is invalid.'), 200
+    
+
+# Running the app
+app.run(host = '0.0.0.0', port = 1000)
